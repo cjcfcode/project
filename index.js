@@ -16,9 +16,13 @@ async function handleRequest(request) {
   4: 'Thur',
   5: 'Fri',  
   6: 'Sat'
-};
+  };
 
   const timezone = request.cf.timezone;
+  const score = request.cf.botManagement.score;
+  let asn = request.cf.asn;
+  let org = request.cf.asOrganization;
+  let colo = request.cf.colo;
   let localized_date = new Date(new Date().toLocaleString('en-US', { timeZone: timezone }));
   let month = localized_date.getMonth() + 1;
   let date = localized_date.getDate();
@@ -32,7 +36,7 @@ async function handleRequest(request) {
   latitude = request.cf.latitude;
   longitude = request.cf.longitude;
   endpoint += `${latitude};${longitude}/?token=${token}`;
-  const init = {
+  let init = {
     headers: {
       'content-type': 'application/json;charset=UTF-8',
     },
@@ -48,25 +52,48 @@ async function handleRequest(request) {
   html_content += `<p>The AQI level is: ${content.data.aqi}</p>`;
   html_content += `<p>The Ozone level is: ${content.data.iaqi.o3?.v}</p>`;
   html_content += `<p>The Rain (precipitation) is: ${content.data.iaqi.r?.v}.</p>`;
-  html_content += `<p>The Wind level is: ${content.data.iaqi.w?.v}(0-12)</p>`;
+  html_content += `<p>The Wind level is: ${content.data.iaqi.w?.v} (0-12)</p>`;
   html_content += `<p>The Relative Humidity is: ${content.data.iaqi.h?.v}%</p>`;
-  html_content += `<p>The temperature is: ${content.data.iaqi.t?.v}°C.</p>`;
+  html_content += `<p>The temperature is: ${content.data.iaqi.t?.v}°C.</p>`;  
+  html_content += `<h1>My bot socre is: ${score} </h1>`;
+  html_content += `<p>My Asn is: ${asn} - ${org}</p>`;
+  html_content += `<p>Colo: ${colo} ; ${request.cf.httpProtocol} ${request.cf.tlsVersion}</p>`;
 
- let html = `
-<!DOCTYPE html>
-<head>
-  <title>project</title>
-</head>
-<body>
-  <style>${html_style}</style>
-  <div id="container">
-  ${html_content}
-  </div>
-</body>`;
+    if (score <= 30) {
+      // Define JSON result
+      let jsonRes = JSON.stringify({
+        result: {
+          reason: "You are bad bot!",
+          my_BotScore: score
+        },
+      });
+      // Define the INIT object
+      let init = {
+        status: 403,
+        headers: {
+          "content-type": "application/json;charset=UTF-8",
+        },
+      };
+      // Create a response object that has a JSON indicating the request is being blocked and why
+      res = new Response(jsonRes, init);
+    } else {
 
-  return new Response(html, {
-    headers: {
-      'content-type': 'text/html;charset=UTF-8',
-    },
-  });
+      let html = `
+      <!DOCTYPE html>
+      <head>
+        <title>project</title>
+      </head>
+      <body>
+        <style>${html_style}</style>
+        <div id="container">
+        ${html_content}
+        </div>
+      </body>`;
+
+      return new Response(html, {
+        headers: {
+          'content-type': 'text/html;charset=UTF-8',
+        },
+      });
+     } 
 }
