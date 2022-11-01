@@ -19,7 +19,7 @@ async function handleRequest(request) {
   };
 
   const timezone = request.cf.timezone;
-  const score = request.cf.botManagement.score;
+  let score = request.cf.botManagement.score;
   let asn = request.cf.asn;
   let org = request.cf.asOrganization;
   let colo = request.cf.colo;
@@ -56,13 +56,16 @@ async function handleRequest(request) {
   html_content += `<p>The Relative Humidity is: ${content.data.iaqi.h?.v}%</p>`;
   html_content += `<p>The temperature is: ${content.data.iaqi.t?.v}°C.</p>`;  
   html_content += `<h1>My bot socre is: ${score} </h1>`;
-  html_content += `<p>My Asn is: ${asn} - ${org}</p>`;
-  html_content += `<p>Colo: ${colo} ; ${request.cf.httpProtocol} ${request.cf.tlsVersion}</p>`;
+  html_content += `<p>My ASN is: ${asn} - ${org}</p>`;
+  html_content += `<p>Colo: ${colo} ; ${request.cf.httpProtocol} ; ${request.cf.tlsVersion}</p>`;
+  
+  //score = 0;
 
     if (score <= 30) {
       // Define JSON result
       let jsonRes = JSON.stringify({
         result: {
+          code: 403,
           reason: "You are bad bot!",
           my_BotScore: score
         },
@@ -76,6 +79,7 @@ async function handleRequest(request) {
       };
       // Create a response object that has a JSON indicating the request is being blocked and why
       res = new Response(jsonRes, init);
+      return res;
     } else {
 
       let html = `
